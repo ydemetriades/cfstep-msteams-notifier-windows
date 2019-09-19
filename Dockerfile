@@ -1,17 +1,16 @@
-FROM python:3.6.4-alpine3.7
+# escape=`
 
-ENV LANG C.UTF-8
+# FROM mcr.microsoft.com/powershell:latest
+FROM mcr.microsoft.com/powershell:windowsservercore-1803
 
-ARG PYMSTEAMS_VERSION
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
-RUN apk update && \
-    apk upgrade && \
-    apk add --no-cache \
-        git \
-        nodejs && \
-    pip install --no-cache-dir pymsteams==$PYMSTEAMS_VERSION
+COPY scripts/ .
 
-COPY script/pymsteams-notifier.py /pymsteams-notifier.py
+RUN Invoke-WebRequest -UseBasicParsing https://chocolatey.org/install.ps1 | Invoke-Expression; `
+    choco install -y python --version 3.6.4; 
+    
+RUN setx /M PATH $($Env:PATH + ';C:\Python36')
+RUN python get-pip.py; pip install --no-cache-dir pymsteams
 
 ENTRYPOINT ["python", "/pymsteams-notifier.py"]
-CMD ["scan"]
